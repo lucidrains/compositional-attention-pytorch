@@ -1,0 +1,1 @@
+from compositional_attention_pytorch.compositional_attention_pytorch import CompositionalAttention
