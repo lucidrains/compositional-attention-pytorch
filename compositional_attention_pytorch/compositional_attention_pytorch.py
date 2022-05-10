@@ -8,6 +8,10 @@ from einops_exts import rearrange_many
 def exists(val):
     return val is not None
 
+def stable_softmax(t, dim = -1):
+    t = t - t.amax(dim = dim, keepdim = True).detach()
+    return t.softmax(dim = dim)
+
 class CompositionalAttention(nn.Module):
     def __init__(
         self,
@@ -80,8 +84,7 @@ class CompositionalAttention(nn.Module):
             causal_mask = torch.ones((i, j), device = x.device, dtype = torch.bool).triu(j - i + 1)
             search_sim = search_sim.masked_fill(causal_mask, -torch.finfo(search_sim.dtype).max)
 
-        search_sim = search_sim - search_sim.amax(dim = -1, keepdim = True).detach()
-        search_attn = search_sim.softmax(dim = -1)
+        search_attn = stable_softmax(search_sim, dim = -1)
         search_attn = self.search_dropout(search_attn)
 
         # get retrieval values
@@ -101,11 +104,14 @@ class CompositionalAttention(nn.Module):
 
         retrieval_sim = einsum('b s n d , b s r n d -> b s n r', rq, rk)
 
-        retrieval_sim = retrieval_sim - retrieval_sim.amax(dim = -1, keepdim = True).detach()
-        retrieval_attn = retrieval_sim.softmax(dim = -1)
+        retrieval_attn = stable_softmax(retrieval_sim, dim = -1)
         retrieval_attn = self.retrieval_dropout(retrieval_attn)
 
-        out = einsum('b s n r, b s r n d -> b s n d', retrieval_attn, retrieved)
-        out = rearrange(out, 'b s n d -> b n (s d)')
+        # aggregate retrievals
 
+        out = einsum('b s n r, b s r n d -> b s n d', retrieval_attn, retrieved)
+
+        # combine search results out
+
+        out = rearrange(out, 'b s n d -> b n (s d)')
         return self.to_out(out)
