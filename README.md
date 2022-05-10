@@ -1,6 +1,6 @@
 <img src="./compositional-attention.png" width="400px"></img>
 
-## Compositional Attention - Pytorch (wip)
+## Compositional Attention - Pytorch
 
 Implementation of <a href="https://arxiv.org/abs/2110.09419">Compositional Attention</a> from MILA. They reframe the "heads" of multi-head attention as "searches", and once the multi-headed/searched values are aggregated, there is an extra retrieval step (using attention) off the searched results. They then show this variant of attention yield better OOD results on a toy task. Their ESBN results still leaves a lot to be desired, but I like the general direction of the paper.
 
